@@ -1,3 +1,14 @@
+# Table of Contents
+1. [About this project](#about-this-project)
+2. [Hexlet tests status](#hexlet-tests-and-linter-status)
+3. [Requirements](#requirements)
+4. [Configuration](#configuration)
+5. [Installation](#installation)
+6. [Infrastructure Deployment](#infrastructure-deployment)
+7. [Contacts](#contacts)
+
+-----
+
 ## About this project
 - Hexlet's course: ["DevOps for Programmers"](https://lite.al/VpBen)
 - Project #2: Docker images deployment with Ansible
@@ -61,11 +72,8 @@ make verify
 
 ----
 
-### Additional setups
+## Contacts
 
-- To setup docker on both VM-s & check setup result, run:
-```
-./setup_docker.sh
-```
+- Author: Mikhail Ikonnikov <mishaikon@gmail.com>
 
 ----
