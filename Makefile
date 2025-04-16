@@ -51,4 +51,7 @@ check-playbook-setup:
 
 ## Check playbook:
 check-playbook:
-	ansible-lint playbook.yml
+	pip install -r requirements.txt
+	ansible-galaxy install -r requirements.yml --force
+	ANSIBLE_COLLECTIONS_PATH=~/.ansible/collections ansible-lint playbook.yml -v
+	# ansible-lint playbook.yml

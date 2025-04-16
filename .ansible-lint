@@ -8,3 +8,6 @@ exclude_paths:
   - tmp/    # Исключаем временные файлы
 
 verbosity: 1
+enable_list:
+  - fqcn-builtins
+  - no-log-password
