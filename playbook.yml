@@ -43,13 +43,13 @@
 
     - name: Generate SSL certificate
       command: >
-        certbot --nginx -d yourdomain.com 
+        certbot --nginx -d webpinger.net 
         --non-interactive --agree-tos 
         -m your@email.com
       when: inventory_hostname == groups.webservers[0]
 
     - name: Get SSL certificate
-      command: certbot --nginx -d yourdomain.com --non-interactive --agree-tos -m your@email.com
+      command: certbot --nginx -d webpinger.net --non-interactive --agree-tos -m info@webpinger.net
       when: inventory_hostname == groups.webservers[0]  # Выполняем только на первом сервере
 
   handlers:

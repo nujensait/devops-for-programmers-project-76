@@ -1,4 +1,4 @@
 docker_users:
   - root
-certbot_email: your@email.com
-domain_name: yourdomain.com
+certbot_email: info@webpinger.net
+domain_name: webpinger.net

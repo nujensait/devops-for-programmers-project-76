@@ -39,7 +39,7 @@ verify:
 	@echo "\n=== Checking Redmine ==="
 	ansible webservers -i inventory.ini -m command -a "docker ps -f name=redmine --format '{{.Status}}'"
 	@echo "\n=== Checking HTTPS ==="
-	curl -sI https://yourdomain.com | grep HTTP
+	curl -sI https://webpinger.net | grep HTTP
 
 ## Cleanup (optional)
 clean:

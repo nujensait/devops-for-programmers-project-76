@@ -9,11 +9,11 @@ server {
   listen 443 ssl;
   server_name webpinger.net;
 
-  ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
-  ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+  ssl_certificate /etc/letsencrypt/live/webpinger.net/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/webpinger.net/privkey.pem;
 
   listen 80;
-  server_name yourdomain.com;
+  server_name webpinger.net;
 
   location / {
     proxy_pass http://redmine;
