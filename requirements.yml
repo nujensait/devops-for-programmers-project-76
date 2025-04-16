@@ -1,9 +1,18 @@
-roles:
-  - name: geerlingguy.docker
-    version: 6.0.0
-  - name: geerlingguy.postgresql
-    version: 2.2.0
-
+---
 collections:
   - name: community.general
-    version: 6.1.0
+    version: 6.6.0  # Обновленная стабильная версия
+  - name: community.docker
+    version: 3.8.0  # Явное добавление коллекции Docker
+  - name: ansible.posix
+    version: 1.5.1  # Для работы с правами и сервисами
+
+roles:
+  - name: geerlingguy.docker
+    version: 7.0.0  # Обновленная версия
+    src: https://github.com/geerlingguy/ansible-role-docker.git
+  - name: geerlingguy.postgresql
+    version: 3.3.0  # Обновленная версия
+    src: https://github.com/geerlingguy/ansible-role-postgresql.git
+  - name: geerlingguy.certbot
+    version: 5.0.0  # Добавлено для работы с SSL

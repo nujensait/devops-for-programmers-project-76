@@ -2,9 +2,10 @@
 - name: Configure infrastructure
   hosts: all
   become: true
+
   tasks:
     - name: Include OS-specific variables
-      include_vars: "{{ item }}"
+      ansible.builtin.include_vars: "{{ item }}"
       loop:
         - "group_vars/webservers.yml"
         - "group_vars/database.yml"
@@ -24,37 +25,32 @@
   hosts: webservers
   tags: loadbalancer
   tasks:
-    - name: Install NGINX
-      apt:
-        name: [nginx, certbot]
+    - name: Install NGINX and Certbot
+      ansible.builtin.apt:
+        name:
+          - nginx
+          - certbot
         state: present
 
     - name: Configure LB
-      template:
+      ansible.builtin.template:
         src: templates/nginx-lb.conf.j2
         dest: /etc/nginx/conf.d/load-balancer.conf
-      notify: restart nginx
-
-    - name: Install Certbot for SSL
-      apt:
-        name: certbot
-        state: present
-      when: inventory_hostname == groups.webservers[0]  # Только на первом сервере
+        mode: "0644"
+      notify: Restart Nginx
 
     - name: Generate SSL certificate
-      command: >
-        certbot --nginx -d webpinger.net 
-        --non-interactive --agree-tos 
-        -m your@email.com
+      ansible.builtin.command: >
+        certbot --nginx -d webpinger.net
+        --non-interactive --agree-tos
+        -m info@webpinger.net
       when: inventory_hostname == groups.webservers[0]
-
-    - name: Get SSL certificate
-      command: certbot --nginx -d webpinger.net --non-interactive --agree-tos -m info@webpinger.net
-      when: inventory_hostname == groups.webservers[0]  # Выполняем только на первом сервере
+      args:
+        creates: /etc/letsencrypt/live/webpinger.net/fullchain.pem
 
   handlers:
-    - name: restart nginx
-      service:
+    - name: Restart Nginx
+      ansible.builtin.service:
         name: nginx
         state: restarted
 
@@ -63,12 +59,12 @@
   tags: database
   tasks:
     - name: Install PostgreSQL
-      apt:
+      ansible.builtin.apt:
         name: postgresql
         state: present
 
     - name: Configure firewall rules
-      ufw:
+      community.general.ufw:
         rule: allow
         from_ip: "{{ hostvars[item].ansible_host }}"
         port: 5432
@@ -79,18 +75,19 @@
   tags: deploy
   tasks:
     - name: Ensure app directory exists
-      file:
+      ansible.builtin.file:
         path: /opt/redmine
         state: directory
-        mode: 0755
+        mode: "0755"
 
     - name: Create .env config
-      template:
+      ansible.builtin.template:
         src: templates/redmine.env.j2
         dest: /opt/redmine/.env
+        mode: "0644"
 
     - name: Run Redmine container
-      docker_container:
+      community.docker.docker_container:
         name: redmine
         image: redmine:latest
         state: started

@@ -44,3 +44,11 @@ verify:
 ## Cleanup (optional)
 clean:
 	ansible webservers -i inventory.ini -m command -a "docker stop redmine && docker rm redmine"
+
+## Check playbook (install validator 1st):
+check-playbook-setup:
+	sudo apt install ansible-lint
+
+## Check playbook:
+check-playbook:
+	ansible-lint playbook.yml
