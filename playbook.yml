@@ -1,0 +1,58 @@
+---
+- name: Configure infrastructure
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Include OS-specific variables
+      include_vars: "{{ item }}"
+      loop:
+        - "group_vars/webservers.yml"
+        - "group_vars/database.yml"
+      when: inventory_hostname in groups[item.split('/')[-1].split('.')[0]]
+
+- name: Setup Docker on webservers
+  hosts: webservers
+  tags: docker
+  roles:
+    - role: geerlingguy.docker
+      vars:
+        docker_users:
+          - mvikonnikov
+
+- name: Configure Load Balancer
+  hosts: webservers
+  tags: loadbalancer
+  tasks:
+    - name: Install NGINX
+      apt:
+        name: nginx
+        state: present
+
+    - name: Configure LB
+      template:
+        src: templates/nginx-lb.conf.j2
+        dest: /etc/nginx/conf.d/load-balancer.conf
+      notify: restart nginx
+
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+
+- name: Setup Database
+  hosts: database
+  tags: database
+  tasks:
+    - name: Install PostgreSQL
+      apt:
+        name: postgresql
+        state: present
+
+    - name: Configure firewall
+      ufw:
+        rule: allow
+        from_ip: "{{ hostvars[item].ansible_host }}"
+        port: 5432
+      loop: "{{ groups.webservers }}"

@@ -1,0 +1,4 @@
+postgresql_users:
+  - name: app_user
+    password: secure_password
+    databases: [app_db]
