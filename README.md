@@ -83,16 +83,19 @@ Access the live application: [https://webpinger.net](https://webpinger.net)
 ## Deployment Commands
 
 1. First deployment:
+
 ```bash
 make deploy-redmine
 ```
 
 2. Setup HTTPS:
+
 ```bash
 make setup-https
 ```
 
 3. Verify:
+
 ```bash
 make verify-app
 ```
@@ -100,12 +103,14 @@ make verify-app
 -----
 
 ## Manual Verification
+
 ```bash
 # Check containers
 ansible webservers -i inventory.ini -m command -a "docker ps"
 
 # Check nginx
 ansible loadbalancer -i inventory.ini -m command -a "systemctl status nginx"
+```
 
 ----
 
