@@ -5,7 +5,10 @@
 4. [Configuration](#configuration)
 5. [Installation](#installation)
 6. [Infrastructure Deployment](#infrastructure-deployment)
-7. [Contacts](#contacts)
+7. [Deployed Application](#deployed-application)
+8. [Deployment Commands](#deployment-commands)
+9. [Manual Verification](#manual-verification)
+10. [Contacts](#contacts)
 
 -----
 
@@ -69,6 +72,40 @@ make setup-db
 ```
 make verify
 ```
+
+----
+
+## Deployed Application
+Access the live application: [https://webpinger.net](https://webpinger.net)
+
+----
+
+## Deployment Commands
+
+1. First deployment:
+```bash
+make deploy-redmine
+```
+
+2. Setup HTTPS:
+```bash
+make setup-https
+```
+
+3. Verify:
+```bash
+make verify-app
+```
+
+-----
+
+## Manual Verification
+```bash
+# Check containers
+ansible webservers -i inventory.ini -m command -a "docker ps"
+
+# Check nginx
+ansible loadbalancer -i inventory.ini -m command -a "systemctl status nginx"
 
 ----
 
