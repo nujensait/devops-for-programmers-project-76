@@ -114,7 +114,11 @@
         enabled: true
 
     - name: Find PostgreSQL version
-      ansible.builtin.shell: "psql --version | grep -oP 'psql \\(PostgreSQL\\) \\K[0-9]+'"
+      ansible.builtin.shell: |
+        set -o pipefail
+        psql --version | awk '{match($0, /[0-9]+/, v); print v[0]}'
+      args:
+        executable: /bin/bash
       register: postgres_version
       changed_when: false
 
