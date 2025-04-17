@@ -7,8 +7,9 @@
 6. [Infrastructure Deployment](#infrastructure-deployment)
 7. [Deployed Application](#deployed-application)
 8. [Deployment Commands](#deployment-commands)
-9. [Manual Verification](#manual-verification)
-10. [Contacts](#contacts)
+9. [Database Setup](#database-setup)
+10. [Manual Verification](#manual-verification)
+11. [Contacts](#contacts)
 
 -----
 
@@ -98,6 +99,26 @@ make setup-https
 
 ```bash
 make verify-app
+```
+
+-----
+
+## Database Setup
+
+1. Create vault password file:
+```bash
+echo "your_password" > vault-pass.txt
+chmod 600 vault-pass.txt
+```
+
+2. Edit encrypted variables:
+```bash
+make edit-vault
+```
+
+3. Deploy with database:
+```bash
+make deploy-with-db
 ```
 
 -----

@@ -1,0 +1,15 @@
+# Database connection settings
+db_host: "{{ hostvars[groups['database'][0]].ansible_host }}"
+db_port: 5432
+db_name: redmine
+db_user: redmine_user
+db_password: "{{ vault_db_password }}"
+
+# Redmine environment variables
+redmine_env:
+  REDMINE_DB_POSTGRES: "{{ db_host }}"
+  REDMINE_DB_PORT: "{{ db_port }}"
+  REDMINE_DB_DATABASE: "{{ db_name }}"
+  REDMINE_DB_USERNAME: "{{ db_user }}"
+  REDMINE_DB_PASSWORD: "{{ db_password }}"
+  REDMINE_DB_ENCODING: utf8

@@ -43,7 +43,7 @@
       ansible.builtin.command: >
         certbot --nginx -d webpinger.net
         --non-interactive --agree-tos
-        -m info@webpinger.net
+        -m mishaikon@gmail.com
       when: inventory_hostname == groups.webservers[0]
       args:
         creates: /etc/letsencrypt/live/webpinger.net/fullchain.pem
@@ -70,7 +70,22 @@
         port: 5432
       loop: "{{ groups.webservers }}"
 
-- name: Deploy Redmine
+    - name: Create database and user
+      community.postgresql.postgresql_db:
+        name: "{{ db_name }}"
+        encoding: UTF8
+        lc_collate: C
+        lc_ctype: C
+        template: template0
+
+    - name: Create database user
+      community.postgresql.postgresql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+        db: "{{ db_name }}"
+        priv: "ALL"
+
+- name: Deploy Redmine with DB
   hosts: webservers
   tags: deploy
   tasks:
@@ -80,13 +95,13 @@
         state: directory
         mode: "0755"
 
-    - name: Create .env config
+    - name: Create .env config from template
       ansible.builtin.template:
         src: templates/redmine.env.j2
         dest: /opt/redmine/.env
         mode: "0644"
 
-    - name: Run Redmine container
+    - name: Run Redmine container with DB
       community.docker.docker_container:
         name: redmine
         image: redmine:latest
@@ -96,4 +111,4 @@
           - "3000:3000"
         volumes:
           - redmine_data:/usr/src/redmine/files
-        env_file: /opt/redmine/.env
+        env: "{{ redmine_env }}"

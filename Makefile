@@ -1,5 +1,8 @@
 .PHONY: init install-deps deploy deploy-docker configure-lb setup-db deploy-redmine setup-https verify clean
 
+###########################################################
+## LESSON 3: pre-deploy
+
 ## Initialize environment
 init:
 	ansible-galaxy install -r requirements.yml
@@ -45,6 +48,9 @@ verify:
 clean:
 	ansible webservers -i inventory.ini -m command -a "docker stop redmine && docker rm redmine"
 
+###########################################################
+## LESSON 4: Deploy
+
 ## Check playbook (install validator 1st):
 check-playbook-setup:
 	sudo apt install ansible-lint
@@ -55,3 +61,22 @@ check-playbook:
 	ansible-galaxy install -r requirements.yml --force
 	ANSIBLE_COLLECTIONS_PATH=~/.ansible/collections ansible-lint playbook.yml -v
 	# ansible-lint playbook.yml
+
+#########################################
+## LESSON 5: Deploy DB
+
+VAULT_PASSWORD_FILE=vault-pass.txt
+
+# Database operations
+encrypt-vault:
+	ansible-vault encrypt group_vars/webservers/vault.yml --vault-password-file $(VAULT_PASSWORD_FILE)
+
+edit-vault:
+	ansible-vault edit group_vars/webservers/vault.yml --vault-password-file $(VAULT_PASSWORD_FILE)
+
+view-vault:
+	ansible-vault view group_vars/webservers/vault.yml --vault-password-file $(VAULT_PASSWORD_FILE)
+
+# Deployment with vault
+deploy-with-db:
+	ansible-playbook -i inventory.ini playbook.yml --tags deploy --vault-password-file $(VAULT_PASSWORD_FILE)
