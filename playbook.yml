@@ -12,6 +12,7 @@
         - "group_vars/redmine.env"
       when: inventory_hostname in groups[item.split('/')[-1].split('.')[0]]
 
+# Step 3: Before deploy
 - name: Setup Docker and dependencies
   hosts: webservers
   tags: docker
@@ -21,6 +22,7 @@
         docker_users:
           - mvikonnikov
 
+# Step 4: Deploy
 - name: Configure Load Balancer
   hosts: webservers
   tags: loadbalancer
@@ -54,6 +56,7 @@
         name: nginx
         state: restarted
 
+# Step 5: DB connect
 - name: Setup Database
   hosts: database
   tags: database
@@ -112,3 +115,92 @@
         volumes:
           - redmine_data:/usr/src/redmine/files
         env: "{{ redmine_env }}"
+
+# Step 6: DataDog monitoring
+- name: Install and configure DataDog agent
+  hosts: webservers
+  become: true          # sudo rights, skip "permission denied" error
+  tags: monitoring
+  tasks:
+    - name: Install dependencies
+      ansible.builtin.apt:
+        name:
+          - curl
+          - gnupg
+          - apt-transport-https
+        state: present
+
+    - name: Add DataDog APT key
+      ansible.builtin.apt_key:
+        url: https://keys.datadoghq.com/DATADOG_APT_KEY.public
+        state: present
+
+    - name: Add DataDog repository
+      ansible.builtin.apt_repository:
+        repo: "deb https://apt.datadoghq.com/ stable main"
+        state: present
+        filename: datadog
+
+    - name: Install DataDog agent
+      ansible.builtin.apt:
+        name: datadog-agent
+        state: present
+        update_cache: yes
+
+    - name: Configure DataDog agent
+      ansible.builtin.template:
+        src: templates/datadog/datadog.yaml.j2
+        dest: /etc/datadog-agent/datadog.yaml
+        owner: dd-agent
+        group: dd-agent
+        mode: '0640'
+      notify: Restart DataDog agent
+
+    - name: Configure http_check
+      ansible.builtin.template:
+        src: templates/datadog/http_check.yaml.j2
+        dest: /etc/datadog-agent/conf.d/http_check.d/conf.yaml
+        owner: dd-agent
+        group: dd-agent
+        mode: '0644'
+      notify: Restart DataDog agent
+
+    - name: Configure Docker monitoring
+      ansible.builtin.template:
+        src: templates/datadog/docker.yaml.j2
+        dest: /etc/datadog-agent/conf.d/docker.d/conf.yaml
+        owner: dd-agent
+        group: dd-agent
+        mode: '0644'
+      notify: Restart DataDog agent
+
+  handlers:
+    - name: Restart DataDog agent
+      ansible.builtin.service:
+        name: datadog-agent
+        state: restarted
+
+# Usage: ansible-playbook -i inventory.ini playbook.yml --tags clean-datadog --vault-password-file vault-pass.txt
+- name: Clean DataDog config
+  hosts: webservers
+  tags: clean-datadog
+  tasks:
+    - name: Remove http_check config
+      ansible.builtin.file:
+        path: /etc/datadog-agent/conf.d/http_check.d/conf.yaml
+        state: absent
+
+# Reinstall datadog agent
+- name: Ensure DataDog agent is installed
+  hosts: webservers
+  become: true
+  tasks:
+    - name: Check if DataDog is installed
+      ansible.builtin.command: which datadog-agent
+      register: datadog_installed
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Install DataDog if missing
+      ansible.builtin.include_tasks: tasks/install_datadog.yml
+      when: datadog_installed.rc != 0

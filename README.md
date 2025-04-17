@@ -9,7 +9,8 @@
 8. [Deployment Commands](#deployment-commands)
 9. [Database Setup](#database-setup)
 10. [Manual Verification](#manual-verification)
-11. [Contacts](#contacts)
+11. [Monitoring Setup](#monitoring-setup)
+12. [Contacts](#contacts)
 
 -----
 
@@ -131,6 +132,22 @@ ansible webservers -i inventory.ini -m command -a "docker ps"
 
 # Check nginx
 ansible loadbalancer -i inventory.ini -m command -a "systemctl status nginx"
+```
+
+----
+
+## Monitoring Setup
+
+1. Set up DataDog:
+
+```bash
+make setup-monitoring
+```
+
+2. Verify agent status:
+
+```bash
+make verify-monitoring
 ```
 
 ----

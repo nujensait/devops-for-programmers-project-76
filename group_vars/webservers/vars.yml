@@ -13,3 +13,24 @@ redmine_env:
   REDMINE_DB_USERNAME: "{{ db_user }}"
   REDMINE_DB_PASSWORD: "{{ db_password }}"
   REDMINE_DB_ENCODING: utf8
+
+# Datadog
+datadog_config:
+  api_key: "{{ vault_datadog_api_key }}"
+  site: datadoghq.eu
+  checks:
+    http_check:
+      init_config: {}
+      instances:
+        - name: "Redmine Health Check"
+          url: "http://localhost:3000"
+          timeout: 5
+          tags:
+            - "service:redmine"
+            - "env:production"
+  logs_enabled: true
+  docker_config:
+    logs:
+      - type: docker
+        service: docker
+        source: docker

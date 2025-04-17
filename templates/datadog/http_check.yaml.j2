@@ -1,0 +1,15 @@
+init_config:
+{% for item in datadog_config.checks.http_check.init_config %}
+  {{ item | to_nice_yaml(indent=2) | indent(2) }}
+{% endfor %}
+
+instances:
+{% for instance in datadog_config.checks.http_check.instances %}
+  - name: {{ instance.name }}
+    url: {{ instance.url }}
+    timeout: {{ instance.timeout }}
+    tags:
+{% for tag in instance.tags %}
+      - {{ tag }}
+{% endfor %}
+{% endfor %}

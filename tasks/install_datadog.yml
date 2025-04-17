@@ -1,0 +1,14 @@
+- name: Download install script
+  ansible.builtin.get_url:
+    url: https://s3.amazonaws.com/dd-agent/scripts/install_script.sh
+    dest: /tmp/install_datadog.sh
+    mode: '0755'
+
+- name: Run install script
+  ansible.builtin.command: >
+    /tmp/install_datadog.sh
+  environment:
+    DD_API_KEY: "{{ vault_datadog_api_key }}"
+    DD_SITE: "{{ datadog_config.site }}"
+  args:
+    creates: /etc/datadog-agent/datadog.yaml

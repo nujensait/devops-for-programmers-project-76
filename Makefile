@@ -80,3 +80,17 @@ view-vault:
 # Deployment with vault
 deploy-with-db:
 	ansible-playbook -i inventory.ini playbook.yml --tags deploy --vault-password-file $(VAULT_PASSWORD_FILE)
+
+###########################################
+## Lesson 7: DataDog monitoring
+
+setup-monitoring:
+	ansible-playbook -i inventory.ini playbook.yml --tags monitoring --vault-password-file $(VAULT_PASSWORD_FILE) --become
+
+verify-monitoring:
+	ansible webservers -i inventory.ini -m command -a "sudo systemctl status datadog-agent" --vault-password-file $(VAULT_PASSWORD_FILE) --become
+
+clean-datadog-config:
+	ansible webservers -i inventory.ini -m file -a "path=/etc/datadog-agent/conf.d/http_check.d/conf.yaml state=absent" --vault-password-file $(VAULT_PASSWORD_FILE) --become
+
+###########################################
