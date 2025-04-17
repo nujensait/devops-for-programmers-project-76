@@ -145,7 +145,7 @@
       ansible.builtin.apt:
         name: datadog-agent
         state: present
-        update_cache: yes
+        update_cache: true
 
     - name: Configure DataDog agent
       ansible.builtin.template:
@@ -198,7 +198,7 @@
     - name: Check if DataDog is installed
       ansible.builtin.command: which datadog-agent
       register: datadog_installed
-      ignore_errors: yes
+      ignore_errors: true
       changed_when: false
 
     - name: Install DataDog if missing
