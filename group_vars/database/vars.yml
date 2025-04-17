@@ -1,0 +1,10 @@
+postgresql_version: 14
+db_name: redmine_prod
+db_user: redmine_user
+db_password: "{{ vault_db_password }}"
+postgresql_users:
+  - name: redmine_user
+    password: "{{ vault_db_password }}"
+    databases: [redmine_prod]
+postgresql_hba_entries:
+  - { type: host, database: all, user: all, address: "0.0.0.0/0", method: md5 }

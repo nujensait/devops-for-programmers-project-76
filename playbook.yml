@@ -8,7 +8,8 @@
       ansible.builtin.include_vars: "{{ item }}"
       loop:
         - "group_vars/webservers.yml"
-        - "group_vars/database.yml"
+        - "group_vars/database/vars.yml"    # Обновленный путь
+        - "group_vars/database/vault.yml"   # Добавлен vault-файл
         - "group_vars/redmine.env"
       when: inventory_hostname in groups[item.split('/')[-1].split('.')[0]]
 
@@ -57,36 +58,135 @@
         state: restarted
 
 # Step 5: DB connect
-- name: Setup Database
+- name: Setup PostgreSQL Database
   hosts: database
+  become: true
   tags: database
   tasks:
-    - name: Install PostgreSQL
+    - name: Install dependencies for PostgreSQL repo
       ansible.builtin.apt:
-        name: postgresql
+        name:
+          - curl
+          - gnupg
+          - ca-certificates
+          - lsb-release
+        state: present
+        update_cache: true
+
+    # Add this new task
+    - name: Install Python PostgreSQL adapter
+      ansible.builtin.apt:
+        name:
+          - python3-psycopg2
         state: present
 
-    - name: Configure firewall rules
-      community.general.ufw:
-        rule: allow
-        from_ip: "{{ hostvars[item].ansible_host }}"
-        port: 5432
-      loop: "{{ groups.webservers }}"
+    - name: Add PostgreSQL signing key
+      ansible.builtin.apt_key:
+        url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+        state: present
 
-    - name: Create database and user
-      community.postgresql.postgresql_db:
-        name: "{{ db_name }}"
-        encoding: UTF8
-        lc_collate: C
-        lc_ctype: C
-        template: template0
+    - name: Get OS information
+      ansible.builtin.setup:
+        filter: "ansible_distribution*"
 
-    - name: Create database user
-      community.postgresql.postgresql_user:
-        name: "{{ db_user }}"
-        password: "{{ db_password }}"
-        db: "{{ db_name }}"
-        priv: "ALL"
+    - name: Add PostgreSQL repository
+      ansible.builtin.apt_repository:
+        repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main"
+        state: present
+        filename: postgresql
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install PostgreSQL and dependencies
+      ansible.builtin.apt:
+        name:
+          - postgresql
+          - postgresql-contrib
+          - postgresql-client
+        state: present
+
+    - name: Ensure PostgreSQL service is running
+      ansible.builtin.service:
+        name: postgresql
+        state: started
+        enabled: true
+
+    - name: Find PostgreSQL version
+      ansible.builtin.shell: "psql --version | grep -oP 'psql \\(PostgreSQL\\) \\K[0-9]+'"
+      register: postgres_version
+      changed_when: false
+
+    - name: Find PostgreSQL configuration directory
+      ansible.builtin.find:
+        paths: /etc/postgresql
+        recurse: false
+        file_type: directory
+      register: postgres_config_dirs
+
+    - name: Find main configuration directories
+      ansible.builtin.find:
+        paths: "{{ item.path }}"
+        recurse: false
+        file_type: directory
+        patterns: "main"
+      register: postgres_main_dirs
+      with_items: "{{ postgres_config_dirs.files }}"
+
+    - name: Set PostgreSQL config path
+      ansible.builtin.set_fact:
+        pg_conf_path: "{{ postgres_main_dirs.results | map(attribute='files') | flatten | map(attribute='path') | first }}"
+
+    - name: Debug PostgreSQL config path
+      ansible.builtin.debug:
+        var: pg_conf_path
+
+    - name: Configure PostgreSQL to listen on all interfaces
+      ansible.builtin.lineinfile:
+        path: "{{ pg_conf_path }}/postgresql.conf"
+        regexp: "^#?listen_addresses"
+        line: "listen_addresses = '*'"
+        backup: true
+      notify: Restart PostgreSQL
+
+    - name: Configure remote access in pg_hba.conf
+      ansible.builtin.lineinfile:
+        path: "{{ pg_conf_path }}/pg_hba.conf"
+        line: "host all all 0.0.0.0/0 md5"
+        insertafter: EOF
+      notify: Restart PostgreSQL
+
+    - name: Create application database
+      ansible.builtin.command: >
+        sudo -u postgres psql -c "CREATE DATABASE {{ db_name }}
+        WITH ENCODING='UTF8'
+        LC_COLLATE='en_US.UTF-8'
+        LC_CTYPE='en_US.UTF-8'
+        TEMPLATE=template0;"
+      register: db_create_result
+      changed_when: "'CREATE DATABASE' in db_create_result.stdout"
+      failed_when: db_create_result.rc != 0 and "already exists" not in db_create_result.stderr
+
+    - name: Create database user with password
+      ansible.builtin.command: >
+          sudo -u postgres psql -c "CREATE USER {{ db_user }} WITH PASSWORD '{{ db_password }}' CREATEDB NOSUPERUSER;"
+      register: user_create_result
+      changed_when: "'CREATE ROLE' in user_create_result.stdout"
+      failed_when: user_create_result.rc != 0 and "already exists" not in user_create_result.stderr
+
+    - name: Grant privileges to user
+      ansible.builtin.command: >
+        sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE {{ db_name }} TO {{ db_user }};"
+      register: grant_result
+      changed_when: "'GRANT' in grant_result.stdout"
+      failed_when: grant_result.rc != 0
+
+  handlers:
+    - name: Restart PostgreSQL
+      ansible.builtin.service:
+        name: postgresql
+        state: restarted
 
 - name: Deploy Redmine with DB
   hosts: webservers

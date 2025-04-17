@@ -77,6 +77,10 @@ edit-vault:
 view-vault:
 	ansible-vault view group_vars/webservers/vault.yml --vault-password-file $(VAULT_PASSWORD_FILE)
 
+# Setup database (works)
+setup-db:
+	ansible-playbook -i inventory.ini playbook.yml   --tags database   --vault-password-file vault-pass.txt -e "@group_vars/database/vars.yml"   -e "@group_vars/database/vault.yml"
+
 # Deployment with vault
 deploy-with-db:
 	ansible-playbook -i inventory.ini playbook.yml --tags deploy --vault-password-file $(VAULT_PASSWORD_FILE)
